@@ -25,13 +25,10 @@ const initiatePayment = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        // Generate unique reference
         const reference = `txn_${crypto.randomBytes(16).toString('hex')}`;
 
-        // Amount in kobo (Paystack uses kobo, 1 Naira = 100 kobo)
         const amountInKobo = Math.round(amount * 100);
 
-        // Initialize transaction with Paystack
         const response = await fetch(PAYSTACK_INIT_URL, {
             method: 'POST',
             headers: {
@@ -68,7 +65,6 @@ const initiatePayment = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        // Create transaction record in database
         await Transaction.create({
             userId,
             reference,
