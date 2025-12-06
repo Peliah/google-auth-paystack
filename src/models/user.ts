@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 export interface IUser {
     username: string;
     email: string;
-    password: string;
+    password?: string;
     role: 'user' | 'admin';
     isDriver?: boolean;
     car?: {
@@ -14,10 +14,12 @@ export interface IUser {
     };
     firstName?: string;
     lastName?: string;
-    phone: string;
+    phone?: string;
     profilePicture?: string;
     bio?: string;
     rating?: number;
+    googleId?: string;
+    authProvider: 'local' | 'google';
 }
 
 const userSchema = new Schema<IUser>({
@@ -34,7 +36,6 @@ const userSchema = new Schema<IUser>({
     },
     password: {
         type: String,
-        required: [true, 'Password is required'],
         minlength: [6, 'Password must be at least 6 characters'],
         select: false
     },
@@ -55,16 +56,23 @@ const userSchema = new Schema<IUser>({
     },
     firstName: { type: String, default: '' },
     lastName: { type: String, default: '' },
-    phone: { type: String, required: [true, 'Phone number is required'], unique: true },
+    phone: { type: String, unique: true, sparse: true },
     profilePicture: { type: String, default: '' },
     bio: { type: String, default: '' },
     rating: { type: Number, default: 0 },
+    googleId: { type: String, unique: true, sparse: true },
+    authProvider: {
+        type: String,
+        enum: ['local', 'google'],
+        default: 'local',
+        required: true,
+    },
 }, {
     timestamps: true,
 });
 
 userSchema.pre('save', async function () {
-    if (!this.isModified('password')) {
+    if (!this.isModified('password') || !this.password) {
         return;
     }
     this.password = await bcrypt.hash(this.password, 10);
