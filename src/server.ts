@@ -12,6 +12,9 @@ import { logger } from '@/lib/winston';
 import swagger from './config/swagger';
 import swaggerUI from 'swagger-ui-express';
 import healthRoutes from '@/routes/health';
+import requestLogger from '@/middleware/requestLogger';
+import errorHandler from '@/middleware/errorHandler';
+import notFound from '@/middleware/notFound';
 // import { authenticateSocket } from '@/middleware/authenticate';
 // const socketio = require('socket.io');
 
@@ -32,6 +35,7 @@ const corsOptions: CorsOptions = {
 }
 
 app.use(cors(corsOptions));
+app.use(requestLogger);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -56,6 +60,12 @@ app.use(limiter);
       res.setHeader("Content-Type", "application/json");
       res.send(swagger);
     });
+
+    // 404 handler - must be after all routes
+    app.use(notFound);
+
+    // Global error handler - must be last
+    app.use(errorHandler);
 
     server.listen(config.PORT, () => {
       logger.info(`Server running on http://localhost:${config.PORT}`);
