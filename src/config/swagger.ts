@@ -18,7 +18,7 @@ const options = {
             },
         },
     },
-    apis: ['src/routes/v1/*.ts'],
+    apis: ['src/routes/*.ts', 'src/routes/v1/*.ts'],
 };
 
 export default swaggerJsDoc(options);

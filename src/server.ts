@@ -11,6 +11,7 @@ import { connectToDatabase, disconnectFromDatabase } from './lib/mongoose';
 import { logger } from '@/lib/winston';
 import swagger from './config/swagger';
 import swaggerUI from 'swagger-ui-express';
+import healthRoutes from '@/routes/health';
 // import { authenticateSocket } from '@/middleware/authenticate';
 // const socketio = require('socket.io');
 
@@ -48,6 +49,7 @@ app.use(limiter);
 (async () => {
   try {
     await connectToDatabase();
+    app.use('/health', healthRoutes);
     app.use('/api/v1', v1routes);
     app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swagger));
     app.get("/swagger.json", (req, res) => {
