@@ -13,7 +13,7 @@ const router = Router();
  * /api/v1/payments/initiate:
  *   post:
  *     summary: Initialize a payment
- *     description: Creates a new payment transaction and returns Paystack checkout URL
+ *     description: Creates a new payment transaction using the authenticated user's email
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -24,13 +24,8 @@ const router = Router();
  *           schema:
  *             type: object
  *             required:
- *               - email
  *               - amount
  *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 description: Customer email address
  *               amount:
  *                 type: number
  *                 description: Amount in Naira
@@ -60,11 +55,12 @@ const router = Router();
  *         description: Invalid request or payment initialization failed
  *       401:
  *         description: User not authenticated
+ *       404:
+ *         description: User not found
  */
 router.post(
     '/initiate',
     authenticate,
-    body('email').isEmail().withMessage('Valid email is required'),
     body('amount').isNumeric().withMessage('Amount must be a number').custom((value) => {
         if (value <= 0) {
             throw new Error('Amount must be greater than 0');

@@ -1,20 +1,20 @@
 import type { Request, Response } from 'express';
 import config from '@/config';
 import Transaction from '@/models/transaction';
+import User from '@/models/user';
 import { logger } from '@/lib/winston';
 import crypto from 'crypto';
 
 const PAYSTACK_INIT_URL = 'https://api.paystack.co/transaction/initialize';
 
 interface InitiatePaymentBody {
-    email: string;
     amount: number; // Amount in Naira (will be converted to kobo)
     metadata?: Record<string, unknown>;
 }
 
 const initiatePayment = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { email, amount, metadata } = req.body as InitiatePaymentBody;
+        const { amount, metadata } = req.body as InitiatePaymentBody;
         const userId = req.userId;
 
         if (!userId) {
@@ -24,6 +24,17 @@ const initiatePayment = async (req: Request, res: Response): Promise<void> => {
             });
             return;
         }
+
+        // Get user's email from database
+        const user = await User.findById(userId).select('email').lean();
+        if (!user) {
+            res.status(404).json({
+                code: 'UserNotFound',
+                message: 'User not found',
+            });
+            return;
+        }
+        const email = user.email;
 
         const reference = `txn_${crypto.randomBytes(16).toString('hex')}`;
 
