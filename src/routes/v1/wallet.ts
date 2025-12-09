@@ -4,6 +4,8 @@ import getBalance from '@/controllers/v1/wallet/balance';
 import deposit from '@/controllers/v1/wallet/deposit';
 import webhookHandler from '@/controllers/v1/wallet/webhook';
 import getDepositStatus from '@/controllers/v1/wallet/depositStatus';
+import transfer from '@/controllers/v1/wallet/transfer';
+import getTransactions from '@/controllers/v1/wallet/transactions';
 import authenticate from '@/middleware/authenticate';
 import validationError from '@/middleware/validationError';
 
@@ -164,5 +166,112 @@ router.get(
     validationError,
     getDepositStatus
 );
+
+/**
+ * @openapi
+ * /api/v1/wallet/transfer:
+ *   post:
+ *     summary: Transfer funds to another wallet
+ *     description: Transfer money from your wallet to another user's wallet
+ *     tags: [Wallet]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - wallet_number
+ *               - amount
+ *             properties:
+ *               wallet_number:
+ *                 type: string
+ *                 description: Recipient's wallet number
+ *                 example: "4566678954356"
+ *               amount:
+ *                 type: number
+ *                 description: Amount to transfer in Naira
+ *                 example: 3000
+ *     responses:
+ *       200:
+ *         description: Transfer completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Transfer completed
+ *       400:
+ *         description: Invalid request, insufficient balance, or invalid transfer
+ *       401:
+ *         description: User not authenticated
+ *       404:
+ *         description: Recipient wallet not found
+ */
+router.post(
+    '/transfer',
+    authenticate,
+    body('wallet_number')
+        .isString().withMessage('Wallet number must be a string')
+        .notEmpty().withMessage('Wallet number is required'),
+    body('amount')
+        .isNumeric().withMessage('Amount must be a number')
+        .custom((value) => {
+            if (value <= 0) {
+                throw new Error('Amount must be greater than 0');
+            }
+            return true;
+        }),
+    validationError,
+    transfer
+);
+
+/**
+ * @openapi
+ * /api/v1/wallet/transactions:
+ *   get:
+ *     summary: Get transaction history
+ *     description: Returns all transactions (deposits and transfers) for the authenticated user
+ *     tags: [Wallet]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Transaction history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                     enum: [deposit, transfer]
+ *                   amount:
+ *                     type: number
+ *                   status:
+ *                     type: string
+ *                     enum: [pending, success, failed, abandoned]
+ *             example:
+ *               - type: deposit
+ *                 amount: 5000
+ *                 status: success
+ *               - type: transfer
+ *                 amount: 3000
+ *                 status: success
+ *       401:
+ *         description: User not authenticated
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/transactions', authenticate, getTransactions);
 
 export default router;
