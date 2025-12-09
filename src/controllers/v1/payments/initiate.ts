@@ -8,7 +8,7 @@ import crypto from 'crypto';
 const PAYSTACK_INIT_URL = 'https://api.paystack.co/transaction/initialize';
 
 interface InitiatePaymentBody {
-    amount: number; // Amount in Naira (will be converted to kobo)
+    amount: number;
     metadata?: Record<string, unknown>;
 }
 
@@ -25,7 +25,6 @@ const initiatePayment = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        // Get user's email from database
         const user = await User.findById(userId).select('email').lean();
         if (!user) {
             res.status(404).json({
@@ -78,6 +77,7 @@ const initiatePayment = async (req: Request, res: Response): Promise<void> => {
 
         await Transaction.create({
             userId,
+            type: 'deposit',
             reference,
             amount,
             email,

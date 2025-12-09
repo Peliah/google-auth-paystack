@@ -1,15 +1,22 @@
 import { Schema, model, Types } from 'mongoose';
 
+export type TransactionType = 'deposit' | 'transfer';
+export type TransactionStatus = 'pending' | 'success' | 'failed' | 'abandoned';
+
 export interface ITransaction {
     userId: Types.ObjectId;
+    type: TransactionType;
     reference: string;
     amount: number;
     email: string;
-    status: 'pending' | 'success' | 'failed' | 'abandoned';
+    status: TransactionStatus;
     currency: string;
     paymentChannel?: string;
     paidAt?: Date;
     metadata?: Record<string, unknown>;
+
+    senderWalletId?: Types.ObjectId;
+    recipientWalletId?: Types.ObjectId;
 }
 
 const transactionSchema = new Schema<ITransaction>({
@@ -17,6 +24,15 @@ const transactionSchema = new Schema<ITransaction>({
         type: Schema.Types.ObjectId,
         required: [true, 'User ID is required'],
         ref: 'User',
+        index: true,
+    },
+    type: {
+        type: String,
+        enum: {
+            values: ['deposit', 'transfer'],
+            message: '{VALUE} is not a valid transaction type',
+        },
+        required: [true, 'Transaction type is required'],
         index: true,
     },
     reference: {
@@ -56,9 +72,23 @@ const transactionSchema = new Schema<ITransaction>({
     metadata: {
         type: Schema.Types.Mixed,
     },
+
+    senderWalletId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Wallet',
+        index: true,
+    },
+    recipientWalletId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Wallet',
+        index: true,
+    },
 }, {
     timestamps: true,
 });
 
-export default model<ITransaction>('Transaction', transactionSchema);
 
+transactionSchema.index({ userId: 1, type: 1 });
+transactionSchema.index({ userId: 1, status: 1 });
+
+export default model<ITransaction>('Transaction', transactionSchema);
