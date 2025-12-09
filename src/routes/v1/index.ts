@@ -2,6 +2,7 @@ import { Router } from "express";
 import authRoutes from './auth';
 import userRoutes from './user';
 import paymentRoutes from './payments';
+import walletRoutes from './wallet';
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.get('/', (req, res) => {
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/payments', paymentRoutes);
+router.use('/wallet', walletRoutes);
 
 export default router;
