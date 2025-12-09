@@ -3,6 +3,7 @@ import authRoutes from './auth';
 import userRoutes from './user';
 import paymentRoutes from './payments';
 import walletRoutes from './wallet';
+import keysRoutes from './keys';
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/wallet', walletRoutes);
+router.use('/keys', keysRoutes);
 
 export default router;
