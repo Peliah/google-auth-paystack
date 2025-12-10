@@ -15,6 +15,12 @@ const options = {
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
                 },
+                ApiKeyAuth: {
+                    type: 'apiKey',
+                    in: 'header',
+                    name: 'x-api-key',
+                    description: 'API key for service-to-service authentication',
+                },
             },
         },
     },

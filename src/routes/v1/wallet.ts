@@ -6,7 +6,7 @@ import webhookHandler from '@/controllers/v1/wallet/webhook';
 import getDepositStatus from '@/controllers/v1/wallet/depositStatus';
 import transfer from '@/controllers/v1/wallet/transfer';
 import getTransactions from '@/controllers/v1/wallet/transactions';
-import authenticate from '@/middleware/authenticate';
+import dualAuth, { requirePermission } from '@/middleware/dualAuth';
 import validationError from '@/middleware/validationError';
 
 const router = Router();
@@ -20,6 +20,7 @@ const router = Router();
  *     tags: [Wallet]
  *     security:
  *       - BearerAuth: []
+ *       - ApiKeyAuth: []
  *     responses:
  *       200:
  *         description: Wallet balance retrieved successfully
@@ -34,10 +35,12 @@ const router = Router();
  *                   example: 15000
  *       401:
  *         description: User not authenticated
+ *       403:
+ *         description: Missing required permission (API key)
  *       500:
  *         description: Internal server error
  */
-router.get('/balance', authenticate, getBalance);
+router.get('/balance', dualAuth, requirePermission('read'), getBalance);
 
 /**
  * @openapi
@@ -48,6 +51,7 @@ router.get('/balance', authenticate, getBalance);
  *     tags: [Wallet]
  *     security:
  *       - BearerAuth: []
+ *       - ApiKeyAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -79,12 +83,15 @@ router.get('/balance', authenticate, getBalance);
  *         description: Invalid request or payment initialization failed
  *       401:
  *         description: User not authenticated
+ *       403:
+ *         description: Missing required permission (API key)
  *       404:
  *         description: User not found
  */
 router.post(
     '/deposit',
-    authenticate,
+    dualAuth,
+    requirePermission('deposit'),
     body('amount')
         .isNumeric().withMessage('Amount must be a number')
         .custom((value) => {
@@ -132,6 +139,7 @@ router.post('/paystack/webhook', webhookHandler);
  *     tags: [Wallet]
  *     security:
  *       - BearerAuth: []
+ *       - ApiKeyAuth: []
  *     parameters:
  *       - in: path
  *         name: reference
@@ -156,12 +164,17 @@ router.post('/paystack/webhook', webhookHandler);
  *                   type: number
  *       400:
  *         description: Missing reference
+ *       401:
+ *         description: User not authenticated
+ *       403:
+ *         description: Missing required permission (API key)
  *       404:
  *         description: Transaction not found
  */
 router.get(
     '/deposit/:reference/status',
-    authenticate,
+    dualAuth,
+    requirePermission('read'),
     param('reference').notEmpty().withMessage('Reference is required'),
     validationError,
     getDepositStatus
@@ -176,6 +189,7 @@ router.get(
  *     tags: [Wallet]
  *     security:
  *       - BearerAuth: []
+ *       - ApiKeyAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -212,12 +226,15 @@ router.get(
  *         description: Invalid request, insufficient balance, or invalid transfer
  *       401:
  *         description: User not authenticated
+ *       403:
+ *         description: Missing required permission (API key)
  *       404:
  *         description: Recipient wallet not found
  */
 router.post(
     '/transfer',
-    authenticate,
+    dualAuth,
+    requirePermission('transfer'),
     body('wallet_number')
         .isString().withMessage('Wallet number must be a string')
         .notEmpty().withMessage('Wallet number is required'),
@@ -242,6 +259,7 @@ router.post(
  *     tags: [Wallet]
  *     security:
  *       - BearerAuth: []
+ *       - ApiKeyAuth: []
  *     responses:
  *       200:
  *         description: Transaction history retrieved successfully
@@ -269,9 +287,11 @@ router.post(
  *                 status: success
  *       401:
  *         description: User not authenticated
+ *       403:
+ *         description: Missing required permission (API key)
  *       500:
  *         description: Internal server error
  */
-router.get('/transactions', authenticate, getTransactions);
+router.get('/transactions', dualAuth, requirePermission('read'), getTransactions);
 
 export default router;

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { body } from 'express-validator';
 import createKey from '@/controllers/v1/keys/create';
 import rolloverKey from '@/controllers/v1/keys/rollover';
+import revokeKey from '@/controllers/v1/keys/revoke';
 import authenticate from '@/middleware/authenticate';
 import validationError from '@/middleware/validationError';
 
@@ -142,6 +143,59 @@ router.post(
         .notEmpty().withMessage('Expiry is required'),
     validationError,
     rolloverKey
+);
+
+/**
+ * @openapi
+ * /api/v1/keys/revoke:
+ *   post:
+ *     summary: Revoke an API key
+ *     description: Permanently revoke an API key. Revoked keys cannot be used or rolled over.
+ *     tags: [API Keys]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - key_id
+ *             properties:
+ *               key_id:
+ *                 type: string
+ *                 description: ID of the API key to revoke
+ *                 example: 674abc123def456...
+ *     responses:
+ *       200:
+ *         description: API key revoked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: API key revoked successfully
+ *       400:
+ *         description: Key already revoked
+ *       401:
+ *         description: User not authenticated
+ *       404:
+ *         description: API key not found
+ */
+router.post(
+    '/revoke',
+    authenticate,
+    body('key_id')
+        .isString().withMessage('Key ID must be a string')
+        .notEmpty().withMessage('Key ID is required'),
+    validationError,
+    revokeKey
 );
 
 export default router;
